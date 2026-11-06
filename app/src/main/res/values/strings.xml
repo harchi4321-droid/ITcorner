@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ITCorner</string>
+    <string name="vpn_service_title">ITCorner VPN</string>
+    <string name="vpn_connected_desc">Connected securely with ITCorner high-speed tunnel.</string>
+    <string name="vpn_connecting_desc">Connecting to Myanmar-optimized edge server…</string>
+    <string name="vpn_disconnected_desc">Disconnected from ITCorner tunnel.</string>
+    <string name="channel_name">ITCorner VPN Status</string>
+    <string name="channel_desc">Shows active ITCorner VPN connection notification</string>
+</resources>

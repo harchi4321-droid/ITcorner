@@ -1,0 +1,6 @@
+{
+  "name": "ITCorner",
+  "description": "High-Speed, Ultra-Stable VPN for Myanmar with low-latency Singapore & Thailand fast routes, anti-DPI stealth protocols, and banking app bypass.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
