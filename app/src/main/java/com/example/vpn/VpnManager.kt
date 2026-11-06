@@ -111,13 +111,24 @@ object VpnManager {
         val intent = Intent(context, ShweVpnService::class.java).apply {
             action = ShweVpnService.ACTION_CONNECT
         }
-        context.startService(intent)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        } catch (e: Exception) {
+            updateStatus(ConnectionStatus.ERROR, e.localizedMessage)
+        }
     }
 
     fun stopVpn(context: Context) {
         val intent = Intent(context, ShweVpnService::class.java).apply {
             action = ShweVpnService.ACTION_DISCONNECT
         }
-        context.startService(intent)
+        try {
+            context.startService(intent)
+        } catch (_: Exception) {
+        }
     }
 }
