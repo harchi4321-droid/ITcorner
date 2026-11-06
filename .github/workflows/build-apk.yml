@@ -1,0 +1,72 @@
+name: Build & Release ITCorner APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ITCorner VPN APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Prepare Environment & Keystore
+        run: |
+          cp -n .env.example .env || true
+          if [ ! -f debug.keystore ]; then
+            keytool -genkeypair -alias androiddebugkey -keypass android \
+              -keystore debug.keystore -storepass android \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -validity 10000 -keyalg RSA -keysize 2048
+          fi
+
+      - name: Grant Execute Permission to Gradlew
+        run: chmod +x gradlew || true
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ITCorner-VPN-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/debug/*.apk
+          tag_name: ${{ github.ref_name || 'latest' }}
+          name: "ITCorner VPN Release ${{ github.ref_name || 'Latest' }}"
+          body: |
+            ### 🇲🇲 ITCorner VPN Android App
+            - High-Speed Singapore & Thailand Low-Latency Routes
+            - Anti-DPI Stealth & Fast Anti-Censorship DNS Tunnel
+            - Myanmar Banking Split-Tunneling (KBZPay, WavePay, AYA Pay, CB Pay)
+            - Live Speed Test & Real-Time Traffic Counters
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
