@@ -27,24 +27,46 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Prepare Environment & Keystore
+      - name: Setup Gradle Build Environment
         run: |
-          cp -n .env.example .env || true
-          if [ ! -f debug.keystore ]; then
+          # Ensure .env file exists for Secrets plugin
+          if [ -f .env.example ]; then
+            cp -n .env.example .env || true
+          else
+            touch .env
+          fi
+
+          # Ensure debug keystore is decoded or generated
+          if [ -f debug.keystore.base64 ]; then
+            echo "Decoding debug.keystore from base64..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f debug.keystore ]; then
+            echo "Generating new debug.keystore..."
             keytool -genkeypair -alias androiddebugkey -keypass android \
               -keystore debug.keystore -storepass android \
               -dname "CN=Android Debug,O=Android,C=US" \
               -validity 10000 -keyalg RSA -keysize 2048
           fi
 
-      - name: Grant Execute Permission to Gradlew
-        run: chmod +x gradlew || true
+          # Ensure gradlew executable exists and has proper permissions
+          if [ ! -f "gradlew" ] || [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "gradlew or wrapper jar missing. Generating via gradle wrapper..."
+            sudo apt-get update -qq && sudo apt-get install -y -qq gradle
+            gradle wrapper --gradle-version 8.11.1
+          fi
+
+          # Fix line endings and add execute permissions
+          sed -i 's/\r$//' gradlew || true
+          chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Verify APK Generated
+        run: |
+          ls -la app/build/outputs/apk/debug/
+          find app/build/outputs/apk -name "*.apk"
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
